@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MedCore HIS | Hospital operations console</title>
+<meta name="description" content="Demo hospital information system: bed board, ER triage queue, patients, appointments, pharmacy stock and privacy settings.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/kit.css">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<div class="demo-bar">Demo system built by <a href="https://marcusolive.github.io">Marcus Oliveira</a>. All patients and data are fictional.</div>
+
+<header class="appbar">
+  <button class="burger" aria-label="Open navigation" data-icon="menu"></button>
+  <div class="brand"><span class="logo" data-icon="heart"></span>MedCore <small>HIS</small></div>
+  <div class="proj">Facility: <b>Central Campus</b></div>
+  <label class="search"><span data-icon="search"></span><input id="q" placeholder="Search patient by MRN or name, then press Enter" aria-label="Search patients"><kbd>/</kbd></label>
+  <div class="icons">
+    <button id="helpBtn" aria-label="Help" data-icon="help"></button>
+    <button id="bellBtn" aria-label="Alerts" data-icon="bell"><span class="dot"></span></button>
+    <span class="avatar" aria-label="Signed in as Marcus Oliveira">MO</span>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="side" aria-label="Main">
+    <a data-view="overview" data-icon="home">Overview</a>
+    <a data-view="beds" data-icon="bed">Bed board <span class="badge ok" id="bedBadge"></span></a>
+    <a data-view="er" data-icon="alert">Emergency queue <span class="badge bad" id="erBadge"></span></a>
+    <a data-view="patients" data-icon="users">Patients</a>
+    <div class="sec">Clinical services</div>
+    <a data-view="appointments" data-icon="calendar">Appointments</a>
+    <a data-view="pharmacy" data-icon="pill">Pharmacy & stock</a>
+    <div class="sec">Administration</div>
+    <a data-view="settings" data-icon="settings">Settings</a>
+  </nav>
+
+  <main class="main">
+    <section class="view" id="overview">
+      <div class="crumbs">Central Campus / Overview</div>
+      <div class="head"><div><h1>Hospital operations</h1><p>Live census across <b id="unitCount">5</b> inpatient units · <span class="live"><i></i>updated <span id="updated">now</span></span></p></div>
+        <div class="actions"><button class="btn" data-go="beds" data-icon="bed">Open bed board</button><button class="btn primary" data-new-triage data-icon="plus">New triage</button></div></div>
+      <div class="grid g4" id="kpis"></div>
+      <div class="grid g21" style="margin-top:16px">
+        <div class="card"><h3>Admissions vs discharges <div class="seg" id="range"><button data-r="7">7d</button><button data-r="14">14d</button><button data-r="30" class="on">30d</button></div></h3><div id="censusChart"></div></div>
+        <div class="card"><h3>Occupancy by unit <small>% of staffed beds</small></h3><div id="unitBars"></div><div class="legend"><span><i style="background:var(--brand)"></i>Below 80%</span><span><i style="background:#e37400"></i>80 to 89%</span><span><i style="background:#d93025"></i>90% or more</span></div></div>
+      </div>
+      <div class="grid g2" style="margin-top:16px">
+        <div class="card"><h3>Live alerts <small id="alertCount"></small></h3><div class="list" id="alerts"></div></div>
+        <div class="card"><h3>Operating theatres <small>today</small></h3><div id="theatres"></div></div>
+      </div>
+    </section>
+
+    <section class="view" id="beds">
+      <div class="crumbs">Central Campus / Bed board</div>
+      <div class="head"><div><h1>Bed board</h1><p>Click a bed to see the patient, discharge, assign or finish cleaning.</p></div>
+        <div class="seg" id="bedFilter" role="group" aria-label="Filter by unit"></div></div>
+      <div class="bed-legend" id="bedLegend"></div>
+      <div class="grid g2" id="bedGrid"></div>
+    </section>
+
+    <section class="view" id="er">
+      <div class="crumbs">Central Campus / Emergency queue</div>
+      <div class="head"><div><h1>Emergency queue</h1><p>Manchester-style triage. The queue is ordered by priority, then by waiting time.</p></div>
+        <div class="actions"><button class="btn" data-new-triage data-icon="plus">New triage</button><button class="btn primary" id="callNext" data-icon="bell">Call next patient</button></div></div>
+      <div class="tri-cards" id="triSummary"></div>
+      <div class="grid g21" style="margin-top:16px">
+        <div class="card" id="erTable"></div>
+        <div class="card"><h3>Now serving</h3><div id="serving"><p class="empty">No patient called yet.</p></div><h3 style="margin-top:18px">Triage targets</h3><div class="list" id="targets"></div></div>
+      </div>
+    </section>
+
+    <section class="view" id="patients">
+      <div class="crumbs">Central Campus / Patients</div>
+      <div class="head"><div><h1>Patients</h1><p><b id="inHouse">0</b> inpatients in house. Names are masked by default; every chart access is audited.</p></div></div>
+      <div class="card" id="patientsTable"></div>
+    </section>
+
+    <section class="view" id="appointments">
+      <div class="crumbs">Central Campus / Appointments</div>
+      <div class="head"><div><h1>Outpatient clinic</h1><p>Today's schedule per doctor. Clinic clock <b class="mono" id="clinicNow"></b>.</p></div>
+        <div class="actions"><select id="docFilter" class="btn" aria-label="Filter by doctor" style="color:var(--ink);font-weight:500"></select><button class="btn primary" id="bookBtn" data-icon="plus">Book appointment</button></div></div>
+      <div class="grid g4" id="apptKpis"></div>
+      <div class="sched" id="schedule" style="margin-top:16px"></div>
+    </section>
+
+    <section class="view" id="pharmacy">
+      <div class="crumbs">Central Campus / Pharmacy & stock</div>
+      <div class="head"><div><h1>Pharmacy & stock</h1><p>Stock against par level. Items below minimum are flagged for reorder.</p></div><button class="btn primary" id="reorderAll" data-icon="truck">Reorder all low items</button></div>
+      <div class="grid g4" id="stockKpis"></div>
+      <div class="card" style="margin-top:16px" id="stockTable"></div>
+      <div class="grid g2" style="margin-top:16px">
+        <div class="card"><h3>Dispensed today by category</h3><div id="dispDonut"></div></div>
+        <div class="card"><h3>Expiring within 30 days</h3><div class="list" id="expiring"></div></div>
+      </div>
+    </section>
+
+    <section class="view" id="settings">
+      <div class="crumbs">Central Campus / Settings</div>
+      <div class="head"><div><h1>Settings</h1><p>Units, privacy and security controls (LGPD and HIPAA-style safeguards).</p></div></div>
+      <div class="grid g2">
+        <div class="card"><h3>Inpatient units <small>accepting admissions</small></h3><div class="list" id="unitsCfg"></div></div>
+        <div class="card"><h3>Privacy & security</h3><div class="list" id="privacy"></div>
+          <div class="li"><div class="grow"><b>Session timeout</b><small>Lock the console after inactivity</small></div><div class="seg" id="timeout" role="group" aria-label="Session timeout"><button data-t="5">5 min</button><button data-t="15" class="on">15 min</button><button data-t="30">30 min</button></div></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><h3>Audit log <small>who accessed what, and when</small></h3><div class="list" id="auditLog"></div></div>
+    </section>
+  </main>
+</div>
+
+<script src="assets/js/kit.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
